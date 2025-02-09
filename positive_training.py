@@ -6,10 +6,18 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report, confusion_matrix
 
-# 🔹 Connexion à la base de données et récupération des tweets
-connection = sqlite3.connect('database.db')
-query = "SELECT text, positive FROM tweets"  # On récupère les tweets et leur label "positive"
-df = pd.read_sql_query(query, connection)
+# 🔹 Connexion à la base de données MySQL
+connection = pymysql.connect(
+    host="localhost",
+    user="user",
+    password="userpassword", 
+    database="tweets_db",
+    charset="utf8mb4",
+    cursorclass=pymysql.cursors.DictCursor
+)
+
+query = "SELECT text, positive FROM tweets"
+df = pd.read_sql(query, connection)
 connection.close()
 
 # 🔹 Fonction de nettoyage du texte
