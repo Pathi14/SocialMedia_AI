@@ -1,4 +1,5 @@
-import sqlite3
+import pymysql
+import sqlalchemy
 import pandas as pd
 import re
 from sklearn.feature_extraction.text import CountVectorizer
@@ -6,11 +7,17 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report, confusion_matrix
 
-# Connexion à la base de données et récupération des tweets
-connection = sqlite3.connect('database.db')
+# 🔹 Connexion à la base de données MySQL via SQLAlchemy
+db_url = "mysql+pymysql://user:userpassword@localhost/tweets_db"
+engine = sqlalchemy.create_engine(db_url)
+
 query = "SELECT text, negative FROM tweets"
-df = pd.read_sql_query(query, connection)
-connection.close()
+df = pd.read_sql(query, engine)
+
+# 🔹 Vérification des classes dans y
+if df['negative'].nunique() < 2:
+    raise ValueError("Erreur : La base de données doit contenir au moins deux classes (positif et négatif).")
+
 
 # Nettoyage du texte
 def clean_text(text):

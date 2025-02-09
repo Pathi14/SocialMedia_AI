@@ -1,4 +1,5 @@
-import sqlite3
+import pymysql
+import sqlalchemy
 import pandas as pd
 import re
 from sklearn.feature_extraction.text import CountVectorizer
@@ -6,19 +7,16 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report, confusion_matrix
 
-# 🔹 Connexion à la base de données MySQL
-connection = pymysql.connect(
-    host="localhost",
-    user="user",
-    password="userpassword", 
-    database="tweets_db",
-    charset="utf8mb4",
-    cursorclass=pymysql.cursors.DictCursor
-)
+# 🔹 Connexion à la base de données MySQL via SQLAlchemy
+db_url = "mysql+pymysql://user:userpassword@localhost/tweets_db"
+engine = sqlalchemy.create_engine(db_url)
 
 query = "SELECT text, positive FROM tweets"
-df = pd.read_sql(query, connection)
-connection.close()
+df = pd.read_sql(query, engine)
+
+# 🔹 Vérification des classes dans y
+if df['positive'].nunique() < 2:
+    raise ValueError("Erreur : La base de données doit contenir au moins deux classes (positif et négatif).")
 
 # 🔹 Fonction de nettoyage du texte
 def clean_text(text):
@@ -43,6 +41,10 @@ y = df['positive']  # On prend la colonne "positive" comme label
 
 # 🔹 Séparation des données en train/test
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
+
+# 🔹 Vérification des classes après séparation
+if len(set(y_train)) < 2:
+    raise ValueError("Erreur : y_train doit contenir au moins 2 classes distinctes (positif/négatif).")
 
 # 🔹 Entraînement du modèle de régression logistique
 model = LogisticRegression()
