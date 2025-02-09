@@ -1,21 +1,28 @@
-import sqlite3
+import mysql.connector
 import random
 
-# Connexion à la base de données
-connection = sqlite3.connect('database.db')
+# 🔹 Connexion à la base MySQL
+db_config = {
+    'host': 'localhost',
+    'user': 'user',
+    'password': 'userpassword',
+    'database': 'tweets_db'
+}
+
+connection = mysql.connector.connect(**db_config)
 cur = connection.cursor()
 
-# Création manuelle de la table si elle n'existe pas
+# 🔹 Création de la table si elle n'existe pas
 cur.execute("""
     CREATE TABLE IF NOT EXISTS tweets (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         text TEXT NOT NULL,
-        positive INTEGER NOT NULL,
-        negative INTEGER NOT NULL
+        positive BOOLEAN NOT NULL,
+        negative BOOLEAN NOT NULL
     );
 """)
 
-# Liste de tweets positifs et négatifs mélangés
+# 🔹 Liste des tweets
 tweets = [
     ("J'adore cette vidéo, super travail !", 1, 0),
     ("Expérience horrible, je suis très déçu.", 0, 1),
@@ -107,13 +114,17 @@ tweets = [
     ("Commande annulée sans explication.", 0, 1),
 ]
 
-# Mélanger les tweets pour éviter tout regroupement
+# 🔹 Mélanger les tweets
 random.shuffle(tweets)
 
-# Exécution de plusieurs insertions en une seule requête
-cur.executemany("INSERT INTO tweets (text, positive, negative) VALUES (?, ?, ?)", tweets)
+# 🔹 Insérer les tweets en une seule requête
+cur.executemany("INSERT INTO tweets (text, positive, negative) VALUES (%s, %s, %s)", tweets)
 
+# 🔹 Valider l'insertion
 connection.commit()
+
+# 🔹 Fermer la connexion
+cur.close()
 connection.close()
 
-print("✅ 100 tweets insérés avec succès !")
+print("✅ Tweets insérés avec succès dans MySQL !")
