@@ -19,11 +19,28 @@ To install the dependencies, run the following command:
 pip install -r requirements.txt
 ```
 
+## Database
+
+To quickly set up a mysql database and phpMyAdmin interface with docker compose, run the following command:
+
+```bash
+docker-compose up -d
+```
+
+## Training
+
+To train the models, run the following commands:
+
+```bash
+python training/vectorizer_training.py
+python training/positive_training.py
+python training/negative_training.py
+```
+
 ## Usage
 
 To run the application, run the following command:
 
 ```bash
-cd src
 flask --app main run
 ```
