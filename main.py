@@ -1,6 +1,6 @@
 from flask import Flask, request
 import pickle
-from src.prepocessing.preprocessing import preprocess
+from preprocessing import preprocess
 
 app = Flask(__name__)
 

@@ -1,13 +1,13 @@
-import pymysql
+import pickle
 import sqlalchemy
 import pandas as pd
-import re
-from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report, confusion_matrix
+from pathlib import Path
+from preprocessing import preprocess
 
-# 🔹 Connexion à la base de données MySQL via SQLAlchemy
+# Connexion à la base de données MySQL via SQLAlchemy
 db_url = "mysql+pymysql://user:userpassword@localhost/tweets_db"
 engine = sqlalchemy.create_engine(db_url)
 
@@ -15,36 +15,24 @@ query = "SELECT text, positive FROM tweets"
 df = pd.read_sql(query, engine)
 
 # 🔹 Vérification des classes dans y
-if df['positive'].nunique() < 2:
-    raise ValueError("Erreur : La base de données doit contenir au moins deux classes (positif et négatif).")
+if df["positive"].nunique() < 2:
+    raise ValueError(
+        "Erreur : La base de données doit contenir au moins deux classes (positif et négatif)."
+    )
 
-# 🔹 Fonction de nettoyage du texte
-def clean_text(text):
-    text = text.lower()  # Minuscule
-    text = re.sub(r'[^\w\s]', '', text)  # Suppression des caractères spéciaux
-    return text
-
-df['text_clean'] = df['text'].apply(clean_text)
-
-# 🔹 Stopwords français (à filtrer dans la vectorisation)
-french_stopwords = [
-    "le", "la", "les", "un", "une", "des", "du", "de", "dans", "et", "en", "au",
-    "aux", "avec", "ce", "ces", "pour", "par", "sur", "pas", "plus", "où", "mais",
-    "ou", "donc", "ni", "car", "ne", "que", "qui", "quoi", "quand", "à", "son",
-    "sa", "ses", "ils", "elles", "nous", "vous", "est", "sont", "cette", "cet",
-    "aussi", "être", "avoir", "faire", "comme", "tout", "bien", "mal", "on", "lui"
-]
-
-vectorizer = CountVectorizer(stop_words=french_stopwords, max_features=100)
-X = vectorizer.fit_transform(df['text_clean'])
-y = df['positive']  # On prend la colonne "positive" comme label
+X = preprocess(df["text"])
+y = df["positive"]  # On prend la colonne "positive" comme label
 
 # 🔹 Séparation des données en train/test
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.25, random_state=42
+)
 
 # 🔹 Vérification des classes après séparation
 if len(set(y_train)) < 2:
-    raise ValueError("Erreur : y_train doit contenir au moins 2 classes distinctes (positif/négatif).")
+    raise ValueError(
+        "Erreur : y_train doit contenir au moins 2 classes distinctes (positif/négatif)."
+    )
 
 # 🔹 Entraînement du modèle de régression logistique
 model = LogisticRegression()
@@ -65,14 +53,16 @@ new_comments = [
     "Arrête de dire n'importe quoi, imbécile.",  # Négatif
     "Une excellente présentation, bravo à toute l'équipe.",  # Positif
     "Ta gueule!!!",  # Négatif
-    "Imbécile"  # Négatif
+    "Imbécile",  # Négatif
 ]
 
 # 🔹 Nettoyage et vectorisation
-new_comments_clean = [clean_text(comment) for comment in new_comments]
-new_comments_vectorized = vectorizer.transform(new_comments_clean)
+new_comments_vectorized = preprocess(new_comments)
 
 # 🔹 Prédictions sur les nouveaux commentaires
 predictions = model.predict(new_comments_vectorized)
 for comment, label in zip(new_comments, predictions):
     print(f"Commentaire : '{comment}' -> {'Positive' if label == 1 else 'Else'}")
+
+# 🔹 Sauvegarde
+pickle.dump(model, open(Path(__file__).parent / "models/positive.pkl", "wb"))

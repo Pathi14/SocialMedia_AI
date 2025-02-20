@@ -3,9 +3,7 @@ import re
 import pickle
 from pathlib import Path
 
-vectorizer = pickle.load(
-    open(Path(__file__).parent.parent / "models/vectorizer.pkl", "rb")
-)
+vectorizer = pickle.load(open(Path(__file__).parent / "models/vectorizer.pkl", "rb"))
 
 
 # 🔹 Fonction de nettoyage du texte
